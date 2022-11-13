@@ -3,198 +3,61 @@ package hello.itemservice.web.validation;
 import hello.itemservice.domain.item.Item;
 import hello.itemservice.domain.item.ItemRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
 @Controller
+@Slf4j
 @RequestMapping("/validation/v3/items")
 @RequiredArgsConstructor
 public class ValidationItemControllerV3 {
 
     private final ItemRepository itemRepository;
-    private final ItemValidator itemValidator;
-
-    @InitBinder
-    public void init(WebDataBinder dataBinder){
-        dataBinder.addValidators(itemValidator);
-    }
 
     @GetMapping
     public String items(Model model) {
         List<Item> items = itemRepository.findAll();
         model.addAttribute("items", items);
-        return "validation/v2/items";
+        return "/validation/v3/items";
     }
 
     @GetMapping("/{itemId}")
     public String item(@PathVariable long itemId, Model model) {
         Item item = itemRepository.findById(itemId);
         model.addAttribute("item", item);
-        return "validation/v2/item";
+        return "/validation/v3/item";
     }
 
     @GetMapping("/add")
     public String addForm(Model model) {
         model.addAttribute("item", new Item());
-        return "validation/v2/addForm";
-    }
-
-//    @PostMapping("/add")
-    public String addItem(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
-
-        if (!StringUtils.hasText(item.getItemName())){
-            bindingResult.addError(new FieldError("item", "itemName", "상품 이름은 필수입니다."));
-        }
-        if (item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() > 1000000){
-            bindingResult.addError(new FieldError("item", "price", "가격은."));
-        }
-        if (item.getQuantity() == null | item.getQuantity() > 9999){
-            bindingResult.addError(new FieldError("item", "quantity", "수량은 최대 9,999까지 허용합니다."));
-        }
-        // 특정 필드 아닌 복합 룰 검증
-        if (item.getPrice() != null && item.getQuantity() != null){
-            int resultPrice = item.getPrice() * item.getQuantity();
-            if (resultPrice < 10000){
-                bindingResult.addError(new ObjectError("item", "최소 수량 만족 하지 않음."));
-            }
-        }
-
-        if (bindingResult.hasErrors()){
-            return "validation/v2/addForm";
-        }
-
-        // 성공
-        Item savedItem = itemRepository.save(item);
-        redirectAttributes.addAttribute("itemId", savedItem.getId());
-        redirectAttributes.addAttribute("status", true);
-        return "redirect:/validation/v3/items/{itemId}";
-    }
-
-//    @PostMapping("/add")
-    public String addItemV2(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
-
-        if (!StringUtils.hasText(item.getItemName())){
-            bindingResult.addError(new FieldError("item", "itemName", item.getItemName(), false, null, null, "상품 이름은 필수입니다."));
-        }
-        if (item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() > 1000000){
-            bindingResult.addError(new FieldError("item", "price", item.getPrice(), false, null, null, "가격"));
-        }
-        if (item.getQuantity() == null | item.getQuantity() > 9999){
-            bindingResult.addError(new FieldError("item", "quantity", item.getQuantity(), false, null, null, "양"));
-        }
-        // 특정 필드 아닌 복합 룰 검증
-        if (item.getPrice() != null && item.getQuantity() != null){
-            int resultPrice = item.getPrice() * item.getQuantity();
-            if (resultPrice < 10000){
-                bindingResult.addError(new ObjectError("item", null, null, "최소 수량 만족 하지 않음."));
-            }
-        }
-
-        if (bindingResult.hasErrors()){
-            return "validation/v2/addForm";
-        }
-
-        // 성공
-        Item savedItem = itemRepository.save(item);
-        redirectAttributes.addAttribute("itemId", savedItem.getId());
-        redirectAttributes.addAttribute("status", true);
-        return "redirect:/validation/v3/items/{itemId}";
-    }
-
-//    @PostMapping("/add")
-    public String addItemV3(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
-
-        if (!StringUtils.hasText(item.getItemName())){
-            bindingResult.addError(new FieldError("item", "itemName", item.getItemName(), false, new String[]{"required.item.itemName"}, null, "상품 이름은 필수입니다."));
-        }
-        if (item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() > 1000000){
-            bindingResult.addError(new FieldError("item", "price", item.getPrice(), false, new String[]{"range.item.price"}, new Object[]{1000, 1000000}, "가격"));
-        }
-        if (item.getQuantity() == null | item.getQuantity() > 9999){
-            bindingResult.addError(new FieldError("item", "quantity", item.getQuantity(), false, new String[]{"max.item.quantity"}, new Object[]{9999}, "양"));
-        }
-        // 특정 필드 아닌 복합 룰 검증
-        if (item.getPrice() != null && item.getQuantity() != null){
-            int resultPrice = item.getPrice() * item.getQuantity();
-            if (resultPrice < 10000){
-                bindingResult.addError(new ObjectError("item", new String[]{"totalPriceMin"}, new Object[]{10000, resultPrice}, "최소 수량 만족 하지 않음."));
-            }
-        }
-
-        if (bindingResult.hasErrors()){
-            return "validation/v2/addForm";
-        }
-
-        // 성공
-        Item savedItem = itemRepository.save(item);
-        redirectAttributes.addAttribute("itemId", savedItem.getId());
-        redirectAttributes.addAttribute("status", true);
-        return "redirect:/validation/v3/items/{itemId}";
-    }
-
-//    @PostMapping("/add")
-    public String addItemV4(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
-        if (bindingResult.hasErrors()){
-            return "validation/v2/addForm";
-        }
-
-        if (!StringUtils.hasText(item.getItemName())){
-            bindingResult.rejectValue("itemName","required" );
-        }
-        if (item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() > 1000000){
-            bindingResult.rejectValue("price","range", new Object[]{1000, 1000000}, "this is default price");
-        }
-        if (item.getQuantity() == null || item.getQuantity() > 9999){
-            bindingResult.rejectValue("quantity","max", new Object[]{9999}, "this is default");
-        }
-        // 특정 필드 아닌 복합 룰 검증
-        if (item.getPrice() != null && item.getQuantity() != null){
-            int resultPrice = item.getPrice() * item.getQuantity();
-            if (resultPrice < 10000){
-                bindingResult.reject("totalPriceMin", new Object[]{10000, resultPrice}, "dfeault");
-            }
-        }
-
-        if (bindingResult.hasErrors()){
-            return "validation/v2/addForm";
-        }
-
-        // 성공
-        Item savedItem = itemRepository.save(item);
-        redirectAttributes.addAttribute("itemId", savedItem.getId());
-        redirectAttributes.addAttribute("status", true);
-        return "redirect:/validation/v3/items/{itemId}";
-    }
-
-//    @PostMapping("/add")
-    public String addItemV5(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
-        itemValidator.validate(item, bindingResult);
-
-        if (bindingResult.hasErrors()){
-            return "validation/v2/addForm";
-        }
-
-        // 성공
-        Item savedItem = itemRepository.save(item);
-        redirectAttributes.addAttribute("itemId", savedItem.getId());
-        redirectAttributes.addAttribute("status", true);
-        return "redirect:/validation/v3/items/{itemId}";
+        return "/validation/v3/addForm";
     }
 
     @PostMapping("/add")
-    public String addItemV6(@Validated @ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
+    public String addItem(@Validated @ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+        // 특정 필드 아닌 복합 룰 검증
+        if (item.getPrice() != null && item.getQuantity() != null){
+            int resultPrice = item.getPrice() * item.getQuantity();
+            if (resultPrice < 10000){
+                bindingResult.reject("totalPriceMin", new Object[]{10000, resultPrice}, "default");
+            }
+        }
+
         if (bindingResult.hasErrors()){
-            return "validation/v2/addForm";
+            List<ObjectError> allErrors = bindingResult.getAllErrors();
+            for (ObjectError allError : allErrors) {
+                log.info("allError = " + allError);
+            }
+            return "/validation/v3/addForm";
         }
 
         // 성공
@@ -208,7 +71,7 @@ public class ValidationItemControllerV3 {
     public String editForm(@PathVariable Long itemId, Model model) {
         Item item = itemRepository.findById(itemId);
         model.addAttribute("item", item);
-        return "validation/v2/editForm";
+        return "/validation/v3/editForm";
     }
 
     @PostMapping("/{itemId}/edit")
