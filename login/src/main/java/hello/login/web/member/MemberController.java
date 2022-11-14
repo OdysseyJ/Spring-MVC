@@ -21,7 +21,7 @@ public class MemberController {
 
     @GetMapping("/add")
     public String addForm(@ModelAttribute("member") Member member){
-        return "/members/addMemberForm";
+        return "members/addMemberForm";
     }
 
     @PostMapping("/add")
